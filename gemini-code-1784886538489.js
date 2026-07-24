@@ -1,5 +1,12 @@
 (function() {
-    // 1. Inject the CSS (Modal defaults to display: block)
+    // 1. Check if the modal already exists. If it does, just open it and stop.
+    let existingModal = document.getElementById("bookingModal");
+    if (existingModal) {
+        existingModal.style.display = "block";
+        return;
+    }
+
+    // 2. Inject the CSS
     const styles = `
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         .modal { display: block; position: fixed; z-index: 99999; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); }
@@ -25,7 +32,19 @@
     styleSheet.innerText = styles;
     document.head.appendChild(styleSheet);
 
-    // 2. Create the Modal
+    // 3. Pre-build the calendar days perfectly BEFORE putting them on the screen
+    let daysHtml = '';
+    for(let i = 1; i <= 31; i++) {
+        const price = Math.floor(Math.random() * 100) + 50;
+        daysHtml += `
+            <div class="calendar-day" data-date="${i}" data-price="${price}">
+                <span class="date-num">${i}</span>
+                <span class="price">$${price}</span>
+            </div>
+        `;
+    }
+
+    // 4. Create the Modal and inject all the pre-built days at once
     const modalDiv = document.createElement("div");
     modalDiv.id = "bookingModal";
     modalDiv.className = "modal";
@@ -36,42 +55,38 @@
             <div class="calendar-grid" id="calendarGrid">
                 <div class="day-name">Su</div><div class="day-name">Mo</div><div class="day-name">Tu</div>
                 <div class="day-name">We</div><div class="day-name">Th</div><div class="day-name">Fr</div><div class="day-name">Sa</div>
+                ${daysHtml}
             </div>
             <div class="modal-footer">
                 <div id="selectedInfo">Please select a date above.</div>
-                
-                <!-- CUSTOMIZE YOUR DESTINATION LINK HERE -->
                 <a href="https://your-real-webpage.com/checkout" id="bookBtn" class="book-btn disabled" target="_blank">Book Now</a>
             </div>
         </div>
     `;
     document.body.appendChild(modalDiv);
 
-    // 3. Attach Logic
+    // 5. Attach Logic
     const modal = document.getElementById("bookingModal");
     const closeBtn = document.getElementById("closeModal");
-    const calendarGrid = document.getElementById("calendarGrid");
     const bookBtn = document.getElementById("bookBtn");
     const selectedInfo = document.getElementById("selectedInfo");
+    const calendarDays = modal.querySelectorAll('.calendar-day');
 
-    // Close logic (clicking the X or outside the modal)
+    // Close logic
     closeBtn.onclick = () => modal.style.display = "none";
     window.onclick = (e) => { if (e.target === modal) modal.style.display = "none"; }
 
-    // Generate 31 days for the calendar
-    for(let i = 1; i <= 31; i++) {
-        const dayDiv = document.createElement("div");
-        dayDiv.className = "calendar-day";
-        const price = Math.floor(Math.random() * 100) + 50;
-
-        dayDiv.innerHTML = `<span class="date-num">${i}</span><span class="price">$${price}</span>`;
-
-        dayDiv.onclick = () => {
-            document.querySelectorAll('.calendar-day').forEach(el => el.classList.remove('selected'));
-            dayDiv.classList.add('selected');
+    // Day Selection Logic
+    calendarDays.forEach(day => {
+        day.onclick = function() {
+            // Deselect all
+            calendarDays.forEach(el => el.classList.remove('selected'));
+            // Select clicked
+            this.classList.add('selected');
+            // Enable button
             bookBtn.classList.remove('disabled');
-            selectedInfo.innerHTML = `Selected: <strong>Aug ${i}</strong> - Price: <strong>$${price}</strong>`;
+            // Update info text using the data attributes we assigned earlier
+            selectedInfo.innerHTML = `Selected: <strong>Aug ${this.dataset.date}</strong> - Price: <strong>$${this.dataset.price}</strong>`;
         };
-        calendarGrid.appendChild(dayDiv);
-    }
+    });
 })();
